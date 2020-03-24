@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jcep.admin.dao.SiteMapper">
+
+<!-- 사이트 관리 > 공지사항 -->
+	<select id="selectNoticeList" parameterType="jcep.admin.model.SiteVO" resultType="jcep.admin.model.SiteVO">
+			/*selectNoticeList*/
+			SELECT
+				notice_idx AS noticeIdx,
+				notice_title AS noticeTitle,
+				notice_cont AS noticeContent,
+				(
+					CASE notice_open_yn 
+						WHEN 'Y' THEN '공개'
+						WHEN 'N' THEN '비공개'
+					END
+                ) AS noticeOpenYn,
+				date_format(reg_dt, '%Y.%m.%d') AS noticeRegDt
+			FROM ta_notice
+			WHERE 1=1
+			<if test="searchText != null and searchText != ''">
+		        <choose>
+		        	<when test='searchType eq ""'>
+						AND	notice_title LIKE CONCAT('%',#{searchText},'%') OR notice_open_yn LIKE CONCAT('%',#{searchText},'%') 
+					</when>
+		            <when test='searchType eq 1'>
+						AND	notice_title LIKE CONCAT('%',#{searchText},'%')
+					</when>
+				</choose>
+			</if> 
+			ORDER BY notice_idx ASC
+			LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+	
+	<select id="selectNoticeListTotCnt" parameterType="jcep.admin.model.SiteVO" resultType="int">
+			SELECT COUNT(*) totcnt
+			FROM ta_notice
+			WHERE 1=1
+			<if test="searchText != null and searchText != ''">
+		        <choose>
+		        	<when test='searchType eq ""'>
+						AND	notice_title LIKE CONCAT('%',#{searchText},'%') OR notice_open_yn LIKE CONCAT('%',#{searchText},'%') 
+					</when>
+		            <when test='searchType eq 1'>
+						AND	notice_title LIKE CONCAT('%',#{searchText},'%')
+					</when>
+				</choose>
+			</if> 
+	</select>
+	
+	<select id="selectNoticeDetail" parameterType="jcep.admin.model.SiteVO" resultType="jcep.admin.model.SiteVO">
+		<![CDATA[
+			SELECT	notice_idx 					AS noticeIdx
+						,notice_title 				AS noticeTitle
+						,notice_cont 				AS noticeCont
+						,notice_open_yn 			AS noticeOpenYn
+						,notice_impt_yn 			AS noticeImptYn
+						,file_course					AS fileCourse
+						,SUBSTRING_INDEX(org_file_nm, '_', -1) 
+														AS orgFileNm
+						,upload_file_nm 			AS uploadFileNm
+			   FROM ta_notice
+			 WHERE 1=1
+			     AND notice_idx 					=#{noticeIdx}
+		]]>
+	</select>
+	
+	<insert id="noticeInsert" parameterType="jcep.admin.model.SiteVO">
+			INSERT INTO ta_notice (
+				 notice_idx
+				,notice_title
+				,notice_cont
+				,notice_open_yn
+				,notice_impt_yn
+				,file_course
+				,org_file_nm
+				,upload_file_nm
+				,reg_dt
+				,reg_id
+			)
+			VALUES(
+				 (select concat('N',IFNULL(LPAD(MAX(SUBSTRING(notice_idx,2,LENGTH(notice_idx))) + 1,4,'0'),'0000')) from ta_notice a)
+				,#{noticeTitle}
+				,#{noticeCont}
+				,#{noticeOpenYn}
+				,#{noticeImptYn}
+				,#{fileCourse}
+				,#{orgFileNm}
+				,#{uploadFileNm}
+				,CURRENT_TIMESTAMP
+				,'admin'<!-- 나중에 로그인한 아이디로 수정예정  -->
+			)
+	</insert>
+	
+	<update id="noticeUpdate" parameterType="jcep.admin.model.SiteVO">
+			/*noticeUpdate*/
+			<![CDATA[
+			UPDATE ta_notice 
+				set
+				 notice_idx = #{noticeIdx}, 
+				 notice_title = #{noticeTitle}, 
+				 notice_cont = #{noticeCont}, 
+				 notice_open_yn = #{noticeOpenYn}, 
+				 notice_impt_yn = #{noticeImptYn}, 
+				 file_course = #{fileCourse}, 
+				 org_file_nm = #{orgFileNm}, 
+				 upload_file_nm = #{uploadFileNm}, 
+				 reg_dt = #{regDt}, 
+				 reg_id = #{regId} 
+			where notice_idx = #{noticeIdx}
+				 
+			]]>
+	</update>
+	
+	
+	
+	<update id="noticeFileUpload" parameterType="jcep.admin.model.SiteVO">
+			UPDATE ta_notice
+			SET 
+				org_file_nm = #{noticeFile}
+				where notice_idx = #{noticeIdx}
+			ORDER BY notice_idx DESC LIMIT 1	
+	</update>
+	
+	<select id="selectFaqList" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT
+				faq_idx AS faq_idx,
+				faq_title AS faq_title,
+				faq_cont AS faq_cont,
+				(SELECT common_nm FROM ta_common t WHERE t.group_cd = 'G00038' AND common_cd = A.faq_open_yn) AS faq_open_yn,
+				date_format(reg_dt, '%Y.%m.%d') AS reg_dt
+			FROM ta_faq A
+			WHERE 1=1 
+			<if test="searchText != null and searchText != ''">
+		        <choose>
+		        	<when test='searchType eq ""'>
+						AND	faq_title LIKE CONCAT('%',#{searchText},'%') OR faq_open_yn LIKE CONCAT('%',#{searchText},'%') 
+					</when>
+		            <when test='searchType eq 1'>
+						AND	faq_title LIKE CONCAT('%',#{searchText},'%')
+					</when>
+				</choose>
+			</if> 
+			ORDER BY faq_idx DESC
+			LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>
+	
+	<select id="selectFaqDetail" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT	faq_idx 					AS faq_idx
+						,faq_title 				AS faq_title
+						,faq_cont 				AS faq_cont
+						,faq_open_yn 			AS faq_open_yn
+						,file_course					AS	fileCourse
+						,org_file_nm				AS	orgFileNm
+						,upload_file_nm			AS	uploadFileNm
+			   FROM ta_faq
+			 WHERE 1=1
+			     AND faq_idx 					=#{faq_idx}
+	</select>
+	
+	<select id="selectFaqDatailFiles" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT	faq_idx 					AS faq_idx
+						,faq_title 				AS faq_title  
+						,faq_cont 				AS faq_cont
+						,faq_open_yn 			AS faq_open_yn  
+						,file_course					AS	fileCourse
+						,org_file_nm				AS	orgFileNm
+						,upload_file_nm			AS	uploadFileNm
+			   FROM ta_faq
+			 WHERE 1=1
+			     AND faq_idx 					=#{faq_idx}
+	</select>
+	
+	<insert id="selectFaqInsert" parameterType="java.util.Map">
+			INSERT INTO ta_faq (
+				 faq_idx
+				,faq_title  
+				,faq_cont
+				,faq_open_yn
+				,file_course
+				,org_file_nm
+				,upload_file_nm
+				,reg_dt
+				,reg_id
+			)
+			VALUES(
+			(select concat('F',IFNULL(LPAD(MAX(SUBSTRING(faq_idx,2,LENGTH(faq_idx))) + 1,4,'0'),'0000')) from ta_faq a)
+				,#{faq_title}
+				,#{faq_cont}
+				,#{faq_open_yn}
+				,#{fileCourse}
+				,#{orgFileNm}
+				,#{uploadFileNm}
+				,CURRENT_TIMESTAMP
+				,'admin'<!-- 나중에 로그인한 아이디로 수정예정  -->
+			)
+	</insert>
+	
+	
+	<update id="selectfaqUpdate" parameterType="java.util.Map">
+			UPDATE ta_faq 
+				set
+				 faq_idx = #{faq_idx}, 
+				 faq_title = #{faq_title}, 
+				 faq_cont = #{faq_cont}, 
+				 faq_open_yn = #{faq_open_yn}
+				 ,file_course =  #{fileCourse}
+				 ,org_file_nm = #{orgFileNm}
+			where faq_idx = #{faq_idx}
+	</update>
+	
+	<select id="selectFaqListTotCnt" parameterType="java.util.Map" resultType="int">
+			SELECT COUNT(*) totcnt
+			FROM ta_faq
+			WHERE 1=1
+			<if test="searchText != null and searchText != ''">
+		        <choose>
+		        	<when test='searchType eq ""'>
+						AND	faq_title LIKE CONCAT('%',#{searchText},'%') OR faq_open_yn LIKE CONCAT('%',#{searchText},'%') 
+					</when>
+		            <when test='searchType eq 1'>
+						AND	faq_title LIKE CONCAT('%',#{searchText},'%')
+					</when>
+				</choose>
+			</if> 
+	</select>
+	
+	
+	<update id="faqFileUpload" parameterType="jcep.admin.model.SiteVO">
+			UPDATE ta_faq
+			SET 
+				org_file_nm = #{faqFile}
+				where faq_idx = #{faqIdx}
+			ORDER BY faq_idx DESC LIMIT 1	
+	</update>
+
+	<select id="selectFaqListTotal" parameterType="java.util.Map" resultType="java.util.Map">
+			SELECT
+				faq_idx AS faq_idx,
+				faq_title AS faq_title,
+				faq_cont AS faq_cont,
+				(SELECT common_nm FROM ta_common t WHERE t.group_cd = 'G00038' AND common_cd = A.faq_open_yn) AS faq_open_yn,
+				date_format(reg_dt, '%Y.%m.%d') AS reg_dt
+			FROM ta_faq A
+			WHERE 1=1 
+			<if test="searchText != null and searchText != ''">
+		        <choose>
+		        	<when test='searchType eq ""'>
+						AND	faq_title LIKE CONCAT('%',#{searchText},'%') OR faq_open_yn LIKE CONCAT('%',#{searchText},'%') 
+					</when>
+		            <when test='searchType eq 1'>
+						AND	faq_title LIKE CONCAT('%',#{searchText},'%')
+					</when>
+				</choose>
+			</if> 
+			ORDER BY faq_idx DESC
+	</select>
+	
+	<insert id="excelUpload" parameterType="jcep.admin.model.SiteVO">
+		insert into ta_faq(
+		faq_idx
+		,faq_title
+		,faq_cont
+		,faq_open_yn
+		,reg_dt
+		)values
+        (
+            #{faq_idx},
+            #{faqTitle},
+            #{faqCont},
+            #{faqOpenYn},
+            #{regDt}
+        )
+		
+	</insert>
+
+	<select id="calendar_select" parameterType="java.util.Map" resultType="java.util.Map">
+	SELECT 
+		COMP_NM AS compNm
+		,USE_FR_DT AS useFrDt
+		,USE_TO_DT AS  useToDt
+	FROM tb_resour_faci_applicate
+	<![CDATA[
+where ((USE_TO_DT >= #{useFrDt} AND USE_TO_DT <= #{useToDt})
+      OR (USE_FR_DT >= #{useFrDt} AND USE_FR_DT <= #{useToDt})
+      OR (USE_FR_DT <= #{useFrDt} AND USE_TO_DT >= #{useToDt}))
+	]]>
+	</select>
+</mapper>

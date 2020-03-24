@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="jcep.front.dao.FacilityResourceFrontMapper">
+
+<!-- 시설 및 자원 관리 > 시설 정보 -->
+	<select id="selectFacilityUseList" parameterType="jcep.front.model.FacilityResourceFrontVO" resultType="jcep.front.model.FacilityResourceFrontVO">
+			/* selectFacilityUseList */
+			SELECT
+				resour_faci_id AS facilityId,
+				facility_nm AS facilityNm,
+				facility_loc AS facilityLoc,
+				facility_scale AS facilityScale,
+				facility_cost AS facilityCost,
+				facility_equip AS facilityEquip,
+				facility_img AS facilityImg,
+				facility_st_cd AS facilityStCd
+			FROM tb_facility
+			WHERE 1=1
+			<if test="searchText != null and searchText != ''">
+		        AND	facility_nm LIKE CONCAT('%',#{searchText},'%') OR facility_loc LIKE CONCAT('%',#{searchText},'%') OR facility_scale LIKE CONCAT('%',#{searchText},'%') OR facility_equip LIKE CONCAT('%',#{searchText},'%')
+			</if>
+			AND  facility_st_cd = '000001'
+			ORDER BY reg_dt DESC
+	</select>
+	
+	<select id="selectFacilityUseListTotCnt" parameterType="jcep.front.model.FacilityResourceFrontVO" resultType="int">
+			/* selectFacilityUseListTotCnt */
+			SELECT COUNT(*) totcnt
+			FROM tb_facility
+			WHERE 1=1
+			<if test="searchText != null and searchText != ''">
+		        AND	facility_nm LIKE CONCAT('%',#{searchText},'%') OR facility_loc LIKE CONCAT('%',#{searchText},'%') OR facility_scale LIKE CONCAT('%',#{searchText},'%') OR facility_equip LIKE CONCAT('%',#{searchText},'%')
+			</if>  
+	</select>
+	
+<!-- 시설 및 자원 관리 > 시설 정보 -->
+	<select id="selectFacilityUseDetailList" parameterType="java.util.Map" resultType="jcep.front.model.FacilityResourceFrontVO">
+			SELECT
+				a.appli_no AS appliNo,
+                a.resour_faci_id AS resourFaciId,
+                a.member_id AS memberId,
+                a.comp_nm AS compNm,
+                date_format(a.use_fr_dt,'%Y-%m-%d') AS useFrDt,
+                substring(a.use_fr_tm,1,2) AS useFrTm,
+                date_format(a.use_to_dt,'%Y-%m-%d') AS useToDt,
+                substring(a.use_to_tm,1,2) AS useToTm,
+                a.use_obj AS useObj,
+                b.facility_nm AS facilityNm
+			FROM tb_resour_faci_applicate a
+            INNER JOIN tb_facility b
+             ON a.resour_faci_id = b.resour_faci_id
+			WHERE 1=1
+			AND appli_no = #{appliNo}
+	</select>	
+	
+	<insert id="resourFacilityApplInsert" parameterType="jcep.front.model.FacilityResourceFrontVO">
+		/* resourFacilityInsert */
+		INSERT INTO tb_resour_faci_applicate
+		(
+			appli_no,
+			resour_faci_id,
+			member_id,
+			resour_faci_divi_cd,
+			comp_nm,
+			comp_addr1,
+			comp_addr2,
+			comp_appl_nm,
+			comp_tel_no,
+			comp_tel_no2,
+			comp_tel_no3,
+			comp_mail,
+			use_pers_num,
+			use_obj,
+			use_fr_dt,
+			use_fr_tm,
+			use_to_dt,
+			use_to_tm,
+			applic_st_cd,
+			reg_dt,
+			reg_id
+		)
+		VALUES
+		(
+			(select concat('A',IFNULL(LPAD(MAX(SUBSTRING(appli_no,2,LENGTH(appli_no))) + 1,9,'0'),'000000000')) from tb_resour_faci_applicate a),
+			#{facilityNm},
+			#{memberId},
+			#{resourFaciDiviCd},
+			#{compNm},
+			#{compAddr1},
+			#{compAddr2},
+			#{compApplNm},
+			#{compTelNo},
+			#{compTelNo2},
+			#{compTelNo3},
+			concat(#{compMail1},'@',#{compMail1}),
+			#{usePersNum},
+			#{useObj},
+			date_format(#{useFrDt}, '%Y%m%d'),
+			#{useFrTm},
+			date_format(#{useToDt}, '%Y%m%d'),
+			#{useToTm},
+			'000001',
+			CURRENT_TIMESTAMP,
+			#{memberId}
+		)
+	</insert>	
+	
+	
+<!-- 시설 및 자원 관리 > 자원 등록 관리 -->
+	<select id="selectResourceUseList" parameterType="jcep.front.model.FacilityResourceFrontVO" resultType="jcep.front.model.FacilityResourceFrontVO">
+			/* selectResourceUseList */
+			SELECT
+				resour_faci_id AS resourceId,
+				resource_nm AS resourceNm,
+				resource_img AS resourceImg,
+				resource_st_cd AS resourceStCd,
+				date_format(reg_dt, '%Y.%m.%d') AS regDt
+			FROM tb_resource
+			WHERE 1=1
+			<if test="searchText != null and searchText != ''">
+		        <choose>
+		        	<when test='searchType eq ""'>
+						AND	resource_nm LIKE CONCAT('%',#{searchText},'%') 
+					</when>
+		            <when test='searchType eq 1'>
+						AND	resource_nm LIKE CONCAT('%',#{searchText},'%')
+					</when>
+				</choose>
+			</if> 
+			ORDER BY reg_dt DESC
+	</select>
+	
+	<select id="selectResourceUseListTotCnt" parameterType="jcep.front.model.FacilityResourceFrontVO" resultType="int">
+			SELECT COUNT(*) totcnt
+			FROM tb_resource
+			WHERE 1=1
+			<if test="searchText != null and searchText != ''">
+		        <choose>
+		        	<when test='searchType eq ""'>
+						AND	resource_nm LIKE CONCAT('%',#{searchText},'%') 
+					</when>
+		            <when test='searchType eq 1'>
+						AND	resource_nm LIKE CONCAT('%',#{searchText},'%')
+					</when>
+				</choose>
+			</if>  
+	</select>
+	
+	
+<!-- 시설 및 자원 관리 > 시설 정보 -->
+	<select id="selectResourceUseDetailList" parameterType="java.util.Map" resultType="jcep.front.model.FacilityResourceFrontVO">
+			SELECT
+				a.appli_no AS appliNo,
+                a.resour_faci_id AS resourFaciId,
+                a.member_id AS memberId,
+                a.comp_nm AS compNm,
+                date_format(a.use_fr_dt,'%Y-%m-%d') AS useFrDt,
+                substring(a.use_fr_tm,1,2) AS useFrTm,
+                date_format(a.use_to_dt,'%Y-%m-%d') AS useToDt,
+                substring(a.use_to_tm,1,2) AS useToTm,
+                a.use_obj AS useObj,
+                b.resource_nm AS facilityNm
+			FROM tb_resour_faci_applicate a
+            INNER JOIN tb_resource b
+             ON a.resour_faci_id = b.resour_faci_id
+			WHERE 1=1
+			AND appli_no = #{appliNo}
+	</select>		
+<!-- 시설신청 & 자원신청정보 -->
+	<select id="selectResourceFacilityCalendarList" parameterType="jcep.front.model.FacilityResourceFrontVO" resultType="jcep.front.model.FacilityResourceFrontVO">
+			/* selectResourceFacilityCalendarList */
+				SELECT  a.appli_no  AS appliNo
+	                   ,a.comp_nm  AS compNm
+					   ,b.facility_nm AS facilityNm
+					   ,a.resour_faci_divi_cd as resourFaciDiviCd
+	                   ,concat(IF(concat(#{useDate} , '01') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+	                   ,',',IF(concat(#{useDate},'02') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+	                   ,',',IF(concat(#{useDate},'03') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+	                   ,',',IF(concat(#{useDate},'04') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'05') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'06') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'07') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'08') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'09') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'10') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'11') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'12') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'13') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'14') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'15') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'16') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'17') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'18') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'19') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'20') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'21') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'22') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'23') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'24') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'25') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'26') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'27') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'28') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'29') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'30') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ,',',IF(concat(#{useDate},'31') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+					   ) as calyn
+				FROM tb_resour_faci_applicate a 
+				   INNER JOIN tb_facility b
+				   ON a.resour_faci_id = b.resour_faci_id
+				WHERE 1=1
+			        AND substring(use_fr_dt,  1,6) <![CDATA[<=]]> #{useDate}
+					AND substring(use_to_dt, 1,6) <![CDATA[>=]]> #{useDate}
+					AND a.applic_st_cd = '000004' 
+ 					        AND a.resour_faci_divi_cd =  'F'
+	</select>	
+	
+<!-- 시설신청 & 자원신청정보 -->
+	<select id="selectResourceFacilityCalendarList2" parameterType="jcep.front.model.FacilityResourceFrontVO" resultType="jcep.front.model.FacilityResourceFrontVO">
+			/* selectResourceFacilityCalendarList */
+					
+			SELECT  a.appli_no  AS appliNo
+                   ,a.comp_nm  AS compNm
+				   ,b.resource_nm AS facilityNm
+				   ,a.resour_faci_divi_cd as resourFaciDiviCd
+                   ,concat(IF(concat(#{useDate} , '01') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+                   ,',',IF(concat(#{useDate},'02') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+                   ,',',IF(concat(#{useDate},'03') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+                   ,',',IF(concat(#{useDate},'04') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'05') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'06') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'07') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'08') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'09') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'10') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'11') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'12') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'13') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'14') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'15') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'16') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'17') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'18') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'19') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'20') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'21') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'22') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'23') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'24') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'25') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'26') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'27') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'28') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'29') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'30') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ,',',IF(concat(#{useDate},'31') BETWEEN use_fr_dt AND use_to_dt, 'Y', 'N')
+				   ) as calyn
+			FROM tb_resour_faci_applicate a 
+			   INNER JOIN tb_resource b
+			   ON a.resour_faci_id = b.resour_faci_id
+			WHERE 1=1
+		        AND substring(use_fr_dt,  1,6) <![CDATA[<=]]> #{useDate}
+				AND substring(use_to_dt, 1,6) <![CDATA[>=]]> #{useDate}
+				AND a.applic_st_cd = '000004' 
+			     AND a.resour_faci_divi_cd = 'R'
+	
+	</select>		
+	
+	
+	<insert id="onlineInsert" parameterType="jcep.admin.model.MemberVO">
+		/* onlineInsert */
+		INSERT INTO tb_onestop_support
+		(
+			onestop_support_no,
+			member_id,
+			comp_appl_nm,
+			comp_posit,
+			comp_tel_no,
+			comp_fax_no,
+			comp_hp_no,
+			comp_mail,
+			advice_hope_dt,
+			advice_place_cd,
+			advice_area_cd,
+			advice_applic_cont,
+			org_file_nm,
+			file_course,
+			reg_dt
+		)
+		VALUES
+		(
+			(select concat('S',IFNULL(LPAD(MAX(SUBSTRING(onestop_support_no,2,LENGTH(onestop_support_no))) + 1,4,'0'),'0000')) from tb_onestop_support a),
+			#{memberId},
+			#{compApplNm},
+			#{compPosit},
+			#{compTelNo},
+			#{compFaxNo},
+			#{compHpNo},
+			#{compMail},
+			#{adviceHopeDt},
+			#{advicePlaceCd},
+			#{adviceAreaCd},
+			#{adviceApplicCont},
+			#{orgFileNm},
+			#{fileCourse},
+			#{regDt}
+		)
+	</insert>
+	
+<!-- 시설 및 자원 관리 > 시설신청정보 -->
+	<select id="selectFacilityApplicateList" parameterType="jcep.admin.model.FacilityResourceVO" resultType="jcep.admin.model.FacilityResourceVO">
+		/*selectFacilityApplicateList*/
+       <![CDATA[
+		SELECT c.*
+		FROM(SELECT	(SELECT facility_nm
+					   FROM tb_facility b
+		             WHERE 1=1
+		                 AND b.resour_faci_id = a.resour_faci_id
+		            ) as facilityNm
+					,member_id as memberId
+					,date_format(use_fr_dt, '%Y-%m-%d') AS useFrDt
+					,time_format(use_fr_tm,'%i시') AS useFrTm
+					,date_format(use_to_dt, '%Y-%m-%d') AS useToDt
+					,time_format(use_to_tm,'%i시') AS useToTm
+					,use_pers_num AS usePersNum
+					,date_format(reg_dt , '%Y-%m-%d')AS regDt
+					,(SELECT common_nm as commonNm 
+		                FROM ta_common
+		              WHERE 1=1 AND group_cd = "G00027" AND use_flag = "Y" AND common_cd =applic_st_cd) AS applicStCd
+		FROM tb_resour_faci_applicate a) c
+		WHERE 1=1
+		]]>
+		<if test="searchType != null and searchType != ''">
+	        <choose>
+	        	<when test='searchType eq ""'>
+					AND	c.applicStCd LIKE CONCAT('%','','%')
+				</when>
+	            <when test='searchType eq 1'>
+					AND	c.applicStCd ='접수'
+				</when>
+	            <when test='searchType eq 2'>
+					AND	c.applicStCd ='진행중'
+				</when>
+	            <when test='searchType eq 3'>
+					AND	c.applicStCd ='반려'
+				</when>
+	            <when test='searchType eq 4'>
+					AND	c.applicStCd ='완료'
+				</when>
+			</choose>
+		</if> 	
+	ORDER BY c.regDt DESC
+		 LIMIT #{recordCountPerPage} OFFSET #{firstIndex}
+	</select>	
+
+
+	<select id="selectFacilityApplicateListTotCnt" parameterType="jcep.admin.model.FacilityResourceVO" resultType="int">
+       <![CDATA[
+			SELECT count(*) AS totcnt
+			FROM(SELECT	member_id as memberId
+						,date_format(use_fr_dt, '%Y-%m-%d') AS useFrDt
+						,time_format(use_fr_tm,'%i시') AS useFrTm
+						,date_format(use_to_dt, '%Y-%m-%d') AS useToDt
+						,time_format(use_to_tm,'%i시') AS useToTm
+						,use_pers_num AS usePersNum
+						,date_format(reg_dt , '%Y-%m-%d')AS regDt
+						,(SELECT common_nm as commonNm 
+			                FROM ta_common
+			              WHERE 1=1 AND group_cd = "G00027" AND use_flag = "Y" AND common_cd =applic_st_cd) AS applicStCd
+			FROM tb_resour_faci_applicate a) c
+		  WHERE 1=1
+		]]>
+		<if test="searchType != null and searchType != ''">
+	        <choose>
+	        	<when test='searchType eq ""'>
+					AND	c.applicStCd LIKE CONCAT('%','','%')
+				</when>
+	            <when test='searchType eq 1'>
+					AND	c.applicStCd ='접수'
+				</when>
+	            <when test='searchType eq 2'>
+					AND	c.applicStCd ='진행중'
+				</when>
+	            <when test='searchType eq 3'>
+					AND	c.applicStCd ='반려'
+				</when>
+	            <when test='searchType eq 4'>
+					AND	c.applicStCd ='완료'
+				</when>
+			</choose>
+		</if> 		
+	ORDER BY c.regDt DESC		 
+	</select>
+
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
